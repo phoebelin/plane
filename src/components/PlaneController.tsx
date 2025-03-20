@@ -82,8 +82,8 @@ export function PlaneController() {
     let speedInput = 0;
     
     // Process inputs
-    if (keysPressed.current.w) pitchInput -= PITCH_SPEED * delta;
-    if (keysPressed.current.s) pitchInput += PITCH_SPEED * delta;
+    if (keysPressed.current.w) pitchInput += PITCH_SPEED * delta;
+    if (keysPressed.current.s) pitchInput -= PITCH_SPEED * delta;
     if (keysPressed.current.a) turnInput -= TURN_SPEED * delta;
     if (keysPressed.current.d) turnInput += TURN_SPEED * delta;
     if (keysPressed.current.q) speedInput += ACCELERATION * delta;
