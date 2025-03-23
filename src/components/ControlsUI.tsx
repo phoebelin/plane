@@ -3,15 +3,22 @@ import { Html } from '@react-three/drei';
 
 interface ControlsUIProps {
   speedPercentage: number;
+  showCameraMode?: boolean;
 }
 
-export function ControlsUI({ speedPercentage }: ControlsUIProps) {
+export function ControlsUI({ speedPercentage, showCameraMode = false }: ControlsUIProps) {
   return (
-    <Html fullscreen>
-      <div style={{
-        position: 'absolute',
+    <Html
+      fullscreen
+      style={{
+        position: 'fixed',
         bottom: '20px',
         left: '20px',
+        transform: 'none',
+        pointerEvents: 'none'
+      }}
+    >
+      <div style={{
         padding: '15px',
         backgroundColor: 'rgba(0, 0, 0, 0.6)',
         borderRadius: '10px',
@@ -19,18 +26,22 @@ export function ControlsUI({ speedPercentage }: ControlsUIProps) {
         fontFamily: 'Arial, sans-serif',
         zIndex: 100,
         userSelect: 'none',
-        maxWidth: '250px'
+        maxWidth: '250px',
+        pointerEvents: 'auto'
       }}>
         <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', fontWeight: 'bold' }}>CONTROLS</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', fontSize: '14px' }}>
           <div><span style={{ fontWeight: 'bold' }}>W/S</span>: Pitch Up/Down</div>
-          <div><span style={{ fontWeight: 'bold' }}>A/D</span>: Turn Left/Right</div>
+          <div><span style={{ fontWeight: 'bold' }}>A/D</span>: Roll Left/Right</div>
           <div><span style={{ fontWeight: 'bold' }}>Q/E</span>: Speed Up/Down</div>
+          <div><span style={{ fontWeight: 'bold' }}>C</span>: Toggle Camera</div>
+          <div><span style={{ fontWeight: 'bold' }}>R</span>: Reset Plane</div>
         </div>
         
         <div style={{ marginTop: '15px' }}>
-          <div style={{ marginBottom: '5px', fontSize: '14px' }}>
+          <div style={{ marginBottom: '5px', fontSize: '14px', display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ fontWeight: 'bold' }}>SPEED: {speedPercentage}%</span>
+            {showCameraMode && <span style={{ color: '#FFD700' }}>FREE CAM</span>}
           </div>
           
           {/* Speed bar */}

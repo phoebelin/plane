@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo, useRef, useEffect } from 'react';
 import { Color, Vector3 } from 'three';
 import { useFrame } from '@react-three/fiber';
 
@@ -10,6 +10,8 @@ type BuildingProps = {
   depth: number;
   color: string;
   buildingType?: 'standard' | 'modern' | 'landmark' | 'skyscraper';
+  registerBuilding?: (position: Vector3, size: Vector3, id: string) => void;
+  unregisterBuilding?: (id: string) => void;
 }
 
 // Tree props type
@@ -20,7 +22,25 @@ type TreeProps = {
 }
 
 // Single building component
-const Building: React.FC<BuildingProps> = ({ position, width, height, depth, color, buildingType = 'standard' }) => {
+const Building: React.FC<BuildingProps> = ({ position, width, height, depth, color, buildingType = 'standard', registerBuilding, unregisterBuilding }) => {
+  const buildingId = useRef(`building-${position[0]}-${position[1]}-${position[2]}-${Math.random()}`);
+
+  // Register this building with the collision system when mounted
+  useEffect(() => {
+    if (registerBuilding) {
+      const buildingPosition = new Vector3(position[0], position[1], position[2]);
+      const buildingSize = new Vector3(width, height, depth);
+      registerBuilding(buildingPosition, buildingSize, buildingId.current);
+    }
+    
+    // Unregister when component unmounts
+    return () => {
+      if (unregisterBuilding) {
+        unregisterBuilding(buildingId.current);
+      }
+    };
+  }, [position, width, height, depth, registerBuilding, unregisterBuilding]);
+
   // Standard building
   if (buildingType === 'standard') {
     return (
@@ -192,9 +212,11 @@ const Tree: React.FC<TreeProps> = ({ position, scale = 1, type = 'pine' }) => {
 type CityChunkProps = {
   position: [number, number, number];
   chunkSize: number;
+  registerBuilding?: (position: Vector3, size: Vector3, id: string) => void;
+  unregisterBuilding?: (id: string) => void;
 }
 
-const CityChunk: React.FC<CityChunkProps> = ({ position, chunkSize }) => {
+const CityChunk: React.FC<CityChunkProps> = ({ position, chunkSize, registerBuilding, unregisterBuilding }) => {
   // Generate a grid of buildings with random heights
   const elements = useMemo(() => {
     const buildingArray: React.ReactNode[] = [];
@@ -338,6 +360,8 @@ const CityChunk: React.FC<CityChunkProps> = ({ position, chunkSize }) => {
             depth={depth}
             color={colorSet[colorIndex]}
             buildingType={buildingType}
+            registerBuilding={registerBuilding}
+            unregisterBuilding={unregisterBuilding}
           />
         );
         
@@ -352,6 +376,8 @@ const CityChunk: React.FC<CityChunkProps> = ({ position, chunkSize }) => {
               height={smallHeight}
               depth={0.6}
               color={buildingColors.standard[Math.floor(pseudoRandom(buildingIndex + 6) * buildingColors.standard.length)]}
+              registerBuilding={registerBuilding}
+              unregisterBuilding={unregisterBuilding}
             />
           );
         }
@@ -424,6 +450,20 @@ export function City() {
     [0, 0, 0] // Initial center chunk
   ]);
   
+  // Get functions from the plane controller context or props
+  const registerBuilding = (position: Vector3, size: Vector3, id: string) => {
+    // Access the BUILDING_REGISTRY from the global scope
+    if (typeof window !== 'undefined' && (window as any).BUILDING_REGISTRY) {
+      (window as any).BUILDING_REGISTRY.set(id, { position, size });
+    }
+  };
+
+  const unregisterBuilding = (id: string) => {
+    if (typeof window !== 'undefined' && (window as any).BUILDING_REGISTRY) {
+      (window as any).BUILDING_REGISTRY.delete(id);
+    }
+  };
+  
   // Track the player's position and update chunks
   useFrame(({ camera }) => {
     // Get the camera position but ignore height (y)
@@ -455,18 +495,14 @@ export function City() {
   
   return (
     <group>
-      {/* Ground */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
-        <planeGeometry args={[1000, 1000]} />
-        <meshStandardMaterial color="#7BA05B" /> {/* Green for grass */}
-      </mesh>
-      
       {/* City Chunks */}
       {chunksToRender.map((position) => (
         <CityChunk 
           key={`chunk-${position[0]}-${position[2]}`}
           position={position as [number, number, number]} 
           chunkSize={chunkSize}
+          registerBuilding={registerBuilding}
+          unregisterBuilding={unregisterBuilding}
         />
       ))}
     </group>

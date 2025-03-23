@@ -2,6 +2,7 @@ import React, { Suspense } from 'react';
 import { Sky, Stars, Loader } from '@react-three/drei';
 import { City } from './City';
 import { PlaneController } from './PlaneController';
+import { Ground } from './Ground';
 
 const Scene: React.FC = () => {
   return (
@@ -24,8 +25,8 @@ const Scene: React.FC = () => {
         args={['#87CEEB', '#6e7f80', 0.4]} // Sky color, ground color, intensity
       />
       
-      {/* Fog to create depth */}
-      <fog attach="fog" args={['#e6f0f4', 30, 100]} />
+      {/* Subtle fog for depth */}
+      <fog attach="fog" args={['#ffffff', 100, 300]} />
       
       {/* Environment */}
       <Suspense fallback={null}>
@@ -36,6 +37,9 @@ const Scene: React.FC = () => {
           azimuth={0.25}
         />
         <Stars radius={300} depth={50} count={1000} factor={4} />
+        
+        {/* Infinite ground with grass and roads */}
+        <Ground />
         
         {/* Infinite city */}
         <City />

@@ -12,9 +12,9 @@ export function Plane() {
   })
 
   return (
-    <>
+    <group rotation={[0, Math.PI, 0]}>
       {/* Fuselage - octagonal prism for more angular shape */}
-      <mesh rotation={[Math.PI / 2, 0, 0]}>
+      <mesh rotation={[0, 0, 0]}>
         <cylinderGeometry args={[0.3, 0.3, 2, 8]} />
         <meshStandardMaterial color="#4a5940" />
       </mesh>
@@ -32,25 +32,25 @@ export function Plane() {
       </mesh>
 
       {/* Tail Wing - horizontal stabilizer */}
-      <mesh position={[0, 0, -1]}>
+      <mesh position={[0, 0, 1]}>
         <boxGeometry args={[1.5, 0.1, 0.5]} />
         <meshStandardMaterial color="#4a5940" />
       </mesh>
 
       {/* Vertical Stabilizer */}
-      <mesh position={[0, 0.5, -1]}>
+      <mesh position={[0, 0.5, 1]}>
         <boxGeometry args={[0.1, 1, 0.5]} />
         <meshStandardMaterial color="#4a5940" />
       </mesh>
 
       {/* Engine - small cylinder at front */}
-      <mesh position={[0, 0, 1]} rotation={[Math.PI / 2, 0, 0]}>
+      <mesh position={[0, 0, -1]} rotation={[Math.PI / 2, 0, 0]}>
         <cylinderGeometry args={[0.2, 0.2, 0.3, 8]} />
         <meshStandardMaterial color="#333333" />
       </mesh>
 
       {/* Propeller */}
-      <group position={[0, 0, 1.2]} ref={propellerRef}>
+      <group position={[0, 0, -1.2]} ref={propellerRef}>
         <mesh rotation={[0, 0, 0]}>
           <boxGeometry args={[0.1, 1, 0.05]} />
           <meshStandardMaterial color="#2a2a2a" />
@@ -62,13 +62,13 @@ export function Plane() {
       </group>
 
       {/* Landing Gear - front */}
-      <mesh position={[0, -0.4, 0.7]}>
+      <mesh position={[0, -0.4, -0.7]}>
         <boxGeometry args={[0.1, 0.3, 0.1]} />
         <meshStandardMaterial color="#2a2a2a" />
       </mesh>
 
       {/* Landing Gear - wheels */}
-      <mesh position={[0, -0.6, 0.7]} rotation={[0, 0, Math.PI / 2]}>
+      <mesh position={[0, -0.6, -0.7]} rotation={[0, 0, Math.PI / 2]}>
         <cylinderGeometry args={[0.1, 0.1, 0.1, 8]} />
         <meshStandardMaterial color="#1a1a1a" />
       </mesh>
@@ -94,6 +94,6 @@ export function Plane() {
         <cylinderGeometry args={[0.1, 0.1, 0.1, 8]} />
         <meshStandardMaterial color="#1a1a1a" />
       </mesh>
-    </>
+    </group>
   )
 } 
