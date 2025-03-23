@@ -180,14 +180,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/phoebelin/plane-game.git"
+    "url": "git+https://github.com/phoebelin/plane.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/phoebelin/plane-game/issues"
+    "url": "https://github.com/phoebelin/plane/issues"
   },
-  "homepage": "https://phoebelin.github.io/",
+  "homepage": "https://phoebelin.github.io/plane/",
   "description": ""
 }
