@@ -32,8 +32,9 @@ export function ControlsUI({ speedPercentage, showCameraMode = false }: Controls
         <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', fontWeight: 'bold' }}>CONTROLS</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', fontSize: '14px' }}>
           <div><span style={{ fontWeight: 'bold' }}>W/S</span>: Pitch Up/Down</div>
-          <div><span style={{ fontWeight: 'bold' }}>A/D</span>: Roll Left/Right</div>
+          <div><span style={{ fontWeight: 'bold' }}>A/D</span>: Roll Right/Left</div>
           <div><span style={{ fontWeight: 'bold' }}>Q/E</span>: Speed Up/Down</div>
+          <div><span style={{ fontWeight: 'bold' }}>SPACE</span>: Fire Weapons</div>
           <div><span style={{ fontWeight: 'bold' }}>C</span>: Toggle Camera</div>
           <div><span style={{ fontWeight: 'bold' }}>R</span>: Reset Plane</div>
         </div>

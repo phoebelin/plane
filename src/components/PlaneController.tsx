@@ -1,9 +1,10 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { Vector3, Quaternion, Euler, Object3D, MathUtils, Group, Box3, Sphere } from 'three';
+import { Vector3, Quaternion, Euler, Object3D, MathUtils, Group, Box3, Sphere, Matrix4 } from 'three';
 import { Plane } from './Plane';
 import { ControlsUI } from './ControlsUI';
 import { Html, OrbitControls } from '@react-three/drei';
+import { WeaponSystem } from './WeaponSystem';
 
 // Physics constants
 const MAX_SPEED = 50;
@@ -15,6 +16,7 @@ const TURN_SENSITIVITY = 1.5;
 const AUTO_LEVEL_SPEED = 2;
 const DAMPING = 0.95;
 const CAMERA_DAMPING = 0.03;
+const CAMERA_ROTATION_DAMPING = 0.02; // Separate damping for rotation to prevent resets
 
 // Angle constraints
 const MAX_PITCH_ANGLE = Math.PI / 3; // 60 degrees
@@ -75,8 +77,8 @@ export function PlaneController() {
   const keysPressed = useRef({
     w: false, // pitch down
     s: false, // pitch up
-    a: false, // roll left
-    d: false, // roll right
+    a: false, // roll right (swapped)
+    d: false, // roll left (swapped)
     q: false, // speed up
     e: false, // slow down
     c: false, // toggle camera mode
@@ -84,6 +86,11 @@ export function PlaneController() {
   
   // Get camera from Three.js context
   const { camera, scene } = useThree();
+  
+  // Add a ref to track camera position and quaternion
+  const prevCameraPos = useRef(new Vector3());
+  const prevCameraQuat = useRef(new Quaternion());
+  const hasInitializedCamera = useRef(false);
   
   // Set up key listeners
   useEffect(() => {
@@ -237,8 +244,8 @@ export function PlaneController() {
       // Process inputs - normalize to range [-1, 1]
       if (keysPressed.current.w) inputStateRef.current.pitch += 1;
       if (keysPressed.current.s) inputStateRef.current.pitch -= 1;
-      if (keysPressed.current.a) inputStateRef.current.roll += 1;
-      if (keysPressed.current.d) inputStateRef.current.roll -= 1;
+      if (keysPressed.current.a) inputStateRef.current.roll -= 1;
+      if (keysPressed.current.d) inputStateRef.current.roll += 1;
       if (keysPressed.current.q) inputStateRef.current.speed += 1;
       if (keysPressed.current.e) inputStateRef.current.speed -= 1;
       
@@ -333,35 +340,95 @@ export function PlaneController() {
     
     // Handle camera position if not in free cam mode
     if (!freeCamMode) {
-      // Create a stable camera reference based on the plane's quaternion
-      const cameraQuat = planeRef.current.quaternion.clone();
-      
-      // Use a fixed distance vector for more stable following
-      const horizontalOffset = new Vector3(0, 0, 25); // Further back for wider view
-      horizontalOffset.applyQuaternion(cameraQuat);
-      
-      // Create a final camera position with height offset
-      const targetCameraPosition = planeRef.current.position.clone()
-        .add(horizontalOffset)
-        .add(new Vector3(0, 8, 0)); // Camera height
-      
-      // Apply damping for camera movement
-      camera.position.lerp(targetCameraPosition, CAMERA_DAMPING);
-      
-      // Create a stable look target at the plane
-      const lookTarget = planeRef.current.position.clone();
-      
-      // Make camera look at plane
-      camera.lookAt(lookTarget);
-      camera.quaternion.normalize();
+      // Make sure the cameraRef is properly initialized
+      if (cameraRef.current && planeRef.current) {
+        // Create camera target based on plane (smooth follow)
+        const offset = new Vector3(0, 8, 25); // Height and distance back
+        
+        // Save current camera reference state before we modify it
+        const currentCameraPos = cameraRef.current.position.clone();
+        const currentCameraQuat = cameraRef.current.quaternion.clone();
+        
+        // Create a working copy of the plane's position and quaternion
+        const targetPosition = planeRef.current.position.clone();
+        const targetQuaternion = planeRef.current.quaternion.clone();
+        
+        // Calculate the desired camera position based on plane's position and quaternion
+        // We'll only apply horizontal rotation (yaw) but not pitch or roll
+        // This keeps the camera level and prevents pointing down
+        const planeEuler = new Euler().setFromQuaternion(targetQuaternion, 'YXZ');
+        const cameraEuler = new Euler(0, planeEuler.y, 0, 'YXZ'); // Only use yaw, zero out pitch and roll
+        const leveledQuaternion = new Quaternion().setFromEuler(cameraEuler);
+        
+        // Apply the leveled quaternion to the camera reference
+        cameraRef.current.quaternion.copy(leveledQuaternion);
+        
+        // Apply offset in local space to position camera behind plane
+        const localOffset = new Vector3(0, 8, 25);
+        localOffset.applyQuaternion(leveledQuaternion);
+        
+        // Set the desired position for the camera reference
+        const desiredPosition = targetPosition.clone().add(localOffset);
+        
+        // Smoothly interpolate the camera reference position
+        cameraRef.current.position.lerp(desiredPosition, 0.1);
+        
+        // Smoothly interpolate actual camera position to follow camera reference
+        camera.position.lerp(cameraRef.current.position, CAMERA_DAMPING);
+        
+        // Create a look target slightly above the plane to prevent looking down
+        const lookTarget = planeRef.current.position.clone().add(new Vector3(0, 2, 0));
+        
+        // Use the targetWorldMatrix and extract the camera's target direction
+        camera.lookAt(lookTarget);
+        
+        // Store current world up vector to maintain horizon level
+        const worldUp = new Vector3(0, 1, 0);
+        
+        // Get current look direction
+        const lookDir = new Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+        
+        // Compute a right vector perpendicular to world up and look direction
+        const rightDir = new Vector3().crossVectors(worldUp, lookDir).normalize();
+        
+        // Recompute an up vector that ensures the camera stays level
+        const correctedUp = new Vector3().crossVectors(lookDir, rightDir).normalize();
+        
+        // Construct a new quaternion that keeps the camera level while looking at target
+        const m = new Matrix4().lookAt(camera.position, lookTarget, correctedUp);
+        const correctedQuaternion = new Quaternion().setFromRotationMatrix(m);
+        
+        // Apply the corrected quaternion with damping to prevent jitter
+        camera.quaternion.slerp(correctedQuaternion, CAMERA_ROTATION_DAMPING);
+      }
     }
   });
+  
+  useEffect(() => {
+    // Initialize camera reference object
+    if (!cameraRef.current.parent && scene) {
+      // Only add to scene once
+      scene.add(cameraRef.current);
+      
+      // Position the reference initially at the plane's position plus offset
+      if (planeRef.current) {
+        const initialOffset = new Vector3(0, 8, 25);
+        cameraRef.current.position.copy(planeRef.current.position);
+        cameraRef.current.quaternion.copy(planeRef.current.quaternion);
+        const localOffset = initialOffset.clone().applyQuaternion(cameraRef.current.quaternion);
+        cameraRef.current.position.add(localOffset);
+      }
+    }
+  }, [scene]);
   
   return (
     <>
       <group ref={planeRef} position={startPosition.current.clone()}>
         <Plane />
       </group>
+      
+      {/* Weapon system */}
+      <WeaponSystem planeRef={planeRef} />
       
       {freeCamMode && (
         <OrbitControls ref={orbitControlsRef} target={planeRef.current?.position || new Vector3()} />

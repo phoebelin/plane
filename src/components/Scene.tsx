@@ -3,6 +3,7 @@ import { Sky, Stars, Loader } from '@react-three/drei';
 import { City } from './City';
 import { PlaneController } from './PlaneController';
 import { Ground } from './Ground';
+import { UFOManager } from './UFOManager';
 
 const Scene: React.FC = () => {
   return (
@@ -43,6 +44,9 @@ const Scene: React.FC = () => {
         
         {/* Infinite city */}
         <City />
+        
+        {/* UFOs */}
+        <UFOManager />
         
         {/* Plane with controller */}
         <PlaneController />
